@@ -1,6 +1,6 @@
-module Test.Util
+module Test.Lights
 
-import My.Util
+import Lights
 
 %access export
 
@@ -14,9 +14,9 @@ assertEqual a b =
 
 testSome : IO ()
 testSome =
-  assertEqual (plus 1 1) 2
+  assertEqual (1 + 1) 2
 
 
 testAnother : IO ()
 testAnother =
-  assertEqual (plus 1 1) 1
+  assertEqual (1 + 1) 1

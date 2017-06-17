@@ -1,0 +1,14 @@
+package lightsout
+
+sourcedir = src
+
+executable = app
+
+main = Main
+
+modules = Main
+        , Lights
+        , Test.Lights
+
+tests = Test.Lights.testSome
+      , Test.Lights.testAnother
