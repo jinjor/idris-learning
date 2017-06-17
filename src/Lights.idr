@@ -12,56 +12,53 @@ Lights n =
   Vect n (Vect n Bool)
 
 
-data Direction =
-  Center | Left | Right | Up | Down
-
-
-toggleOne : Direction -> Fin n -> Fin n -> Lights n -> Lights n
-toggleOne {n} direction i j rows =
-  case direction of
-    Center =>
-      updateAt i (updateAt j not) rows
-    Up =>
-      case integerToFin (finToInteger i - 1) n of
-        Just i' =>
-          updateAt i' (updateAt j not) rows
-        Nothing =>
-          rows
-    Down =>
-      case integerToFin (finToInteger i + 1) n of
-        Just i' =>
-          updateAt i' (updateAt j not) rows
-        Nothing =>
-          rows
-    Left =>
-      case integerToFin (finToInteger j - 1) n of
-        Just j' =>
-          updateAt i (updateAt j' not) rows
-        Nothing =>
-          rows
-    Right =>
-      case integerToFin (finToInteger j + 1) n of
-        Just j' =>
-          updateAt i (updateAt j' not) rows
-        Nothing =>
-          rows
-
-
-directions : Prelude.List.List Direction
-directions =
-  [ Center, Left, Right, Up, Down]
+export
+Position : Nat -> Type
+Position n =
+  (Fin n, Fin n)
 
 
 export
-toggle : Fin n -> Fin n -> Lights n -> Lights n
-toggle i j rows =
-  foldl (\rs, d => toggleOne d i j rs) rows directions
+position : {n : Nat} -> Fin n -> Fin n -> Position n
+position x y =
+  (x, y)
+
+
+move : Integer -> Integer -> Position n -> Maybe (Position n)
+move {n} dx dy (x, y) =
+  case (integerToFin (finToInteger x + dx) n, integerToFin (finToInteger y + dy) n) of
+    (Just x, Just y) => Just (x, y)
+    _ => Nothing
+
+
+toggleOne : Position n -> Lights n -> Lights n
+toggleOne (x, y) rows =
+  updateAt x (updateAt y not) rows
+
+
+export
+toggle : Position n -> Lights n -> Lights n
+toggle position rows =
+  foldl (\r, p => toggleOne p r) rows $
+    Prelude.List.catMaybes
+      [ Just position
+      , move 0 1 position
+      , move 0 (-1) position
+      , move 1 0 position
+      , move (-1) 0 position
+      ]
 
 
 export
 empty : (n : Nat) -> Lights n
 empty n =
   Data.Vect.replicate n (Data.Vect.replicate n False)
+
+
+export
+isEmpty : Lights n -> Bool
+isEmpty rows =
+  all (\row => all not row) rows
 
 
 formatRow : Vect n Bool -> String

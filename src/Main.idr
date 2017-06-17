@@ -10,18 +10,19 @@ size : Nat
 size = 5
 
 
-Model : Type
-Model =
-  Lights Main.size
+data Model =
+  Start | Playing (Lights Main.size)
 
 
 init : Model
 init =
-  empty size
+  Start
 
 
-data Msg =
-  Valid (Fin Main.size) (Fin Main.size) | Invalid
+data Msg
+  = NoOp
+  | StartGame
+  | Toggle (Position Main.size)
 
 
 charToFin : Char -> Maybe (Fin Main.size)
@@ -32,41 +33,61 @@ charToFin char =
     Nothing
 
 
-readInput : IO Msg
-readInput = do
+readInput : (String -> Msg) -> IO Msg
+readInput decode = do
   input <- getLine
+  pure (decode input)
+
+
+decodePosition : String -> Msg
+decodePosition input =
   case unpack input of
     [ a, b ] =>
       case (charToFin a, charToFin b) of
         (Just i, Just j) =>
-          pure $ Valid i j
+          Toggle (position i j)
 
         _ =>
-          pure Invalid
+          NoOp
 
     _ =>
-      pure Invalid
+      NoOp
 
 
 update : Msg -> Model -> Model
 update msg model =
-  case msg of
-    Valid i j =>
-      toggle i j model
+  case (msg, model) of
+    (NoOp, _) =>
+      model
 
-    Invalid =>
+    (StartGame, _) =>
+      Playing $ toggle (position 2 2) (empty size)
+
+    (Toggle position, Playing lights) =>
+      Playing $ toggle position lights
+
+    _ =>
       model
 
 
-view : Model -> String
+view : Model -> (String, String -> Msg)
 view model =
-  format model
+  case model of
+    Start =>
+      ("Press any key to start.", \_ => StartGame)
+
+    Playing lights =>
+      if isEmpty lights then
+        ("Cleared! Press any key to continue.", \_ => StartGame)
+      else
+        (format lights, decodePosition)
 
 
 loop : Model -> IO ()
 loop model =
-  do putStrLn (view model)
-     msg <- readInput
+  do let (s, decoder) = view model
+     putStrLn s
+     msg <- readInput decoder
      loop (update msg model)
 
 
